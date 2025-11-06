@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Chatbot</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Poppins", sans-serif;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      color: #333;
+    }
+
+    .chat-wrapper {
+      width: 100%;
+      height: 100%;
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      animation: fadeIn 0.6s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .chat-header {
+      background: linear-gradient(135deg, #6b73ff, #000dff);
+      color: white;
+      padding: 20px;
+      text-align: center;
+      font-size: 1.2em;
+      font-weight: 600;
+    }
+
+    .chat-box {
+      flex: 1;
+      padding: 15px 20px;
+      overflow-y: auto;
+      background: #f7f8fc;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chat-message {
+      margin: 10px 0;
+      display: flex;
+      align-items: flex-end;
+    }
+
+    .bot-message, .user-message {
+      padding: 12px 16px;
+      border-radius: 18px;
+      max-width: 80%;
+      font-size: 0.95em;
+      line-height: 1.5em;
+    }
+
+    .bot-message {
+      background: #e8e8ef;
+      color: #333;
+      border-bottom-left-radius: 5px;
+      align-self: flex-start;
+    }
+
+    .user-message {
+      background: #4a6cf7;
+      color: white;
+      border-bottom-right-radius: 5px;
+      align-self: flex-end;
+      margin-left: auto;
+    }
+
+    .input-area {
+      display: flex;
+      border-top: 1px solid #ddd;
+      background: #fff;
+      padding: 10px;
+    }
+
+    .input-area input {
+      flex: 1;
+      border: none;
+      padding: 12px;
+      font-size: 1em;
+      border-radius: 25px;
+      background: #f1f2f6;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .input-area input:focus {
+      background: #e9ebff;
+    }
+
+    .input-area button {
+      border: none;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 25px;
+      margin-left: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .input-area button:hover {
+      background: linear-gradient(135deg, #5a67d8, #6b46c1);
+    }
+
+    .typing {
+      font-style: italic;
+      color: #999;
+    }
+
+    /* Scrollbar */
+    .chat-box::-webkit-scrollbar {
+      width: 6px;
+    }
+    .chat-box::-webkit-scrollbar-thumb {
+      background: #ccc;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="chat-wrapper">
+    <div class="chat-header">🤖 AI Assistant</div>
+    <div class="chat-box" id="chat-box">
+
+      <div class="chat-message bot-message">Hello! I'm your AI assistant. How can I help you today Shorab?</div>
+    </div>
+    <div class="input-area">
+      <input type="text" id="user-input" placeholder="Type your message..." />
+      <button id="send-btn">Send</button>
+    </div>
+  </div>
+
+  <script>
+    const API_KEY = "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"; // ⚠️ LOCAL USE ONLY!
+    const API_URL = "https://api.openai.com/v1/chat/completions";
+
+    const chatBox = document.getElementById("chat-box");
+    const userInput = document.getElementById("user-input");
+    const sendBtn = document.getElementById("send-btn");
+
+    sendBtn.addEventListener("click", sendMessage);
+    userInput.addEventListener("keypress", e => {
+      if (e.key === "Enter") sendMessage();
+    });
+
+    function appendMessage(message, sender) {
+      const msgDiv = document.createElement("div");
+      msgDiv.classList.add("chat-message", sender === "user" ? "user-message" : "bot-message");
+      msgDiv.textContent = message;
+      chatBox.appendChild(msgDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    async function sendMessage() {
+      const message = userInput.value.trim();
+      if (!message) return;
+
+      appendMessage(message, "user");
+      userInput.value = "";
+
+      const typingDiv = document.createElement("div");
+      typingDiv.classList.add("chat-message", "bot-message", "typing");
+      typingDiv.textContent = "Typing...";
+      chatBox.appendChild(typingDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
+
+      try {
+        const response = await fetch(API_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${API_KEY}`
+          },
+          body: JSON.stringify({
+            model: "gpt-4o-mini", // or "gpt-4.1" if available
+            messages: [
+              { role: "system", content: "You are a friendly, professional AI assistant." },
+              { role: "user", content: message }
+            ],
+          }),
+        });
+
+        const data = await response.json();
+        const botReply = data.choices?.[0]?.message?.content || "Sorry, I didn’t catch that.";
+
+        typingDiv.classList.remove("typing");
+        typingDiv.textContent = botReply;
+      } catch (error) {
+        console.error(error);
+        typingDiv.classList.remove("typing");
+        typingDiv.textContent = "⚠️ Error: Could not connect to OpenAI.";
+      }
+    }
+  </script>
+</body>
+</html>
